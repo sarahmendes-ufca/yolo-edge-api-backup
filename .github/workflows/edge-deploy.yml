@@ -31,12 +31,12 @@ jobs:
       - name: Set up SSH Key
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.RPI_SSH_KEY }}
 
       - name: Add SSH known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H 100.84.251.61 >> ~/.ssh/known_hosts
+          ssh-keyscan -H 100.65.67.105  >> ~/.ssh/known_hosts
 
   # ─────────────────────────────────────────────────────────
   # JOB 1: Lint e testes unitários / smoke / integration
