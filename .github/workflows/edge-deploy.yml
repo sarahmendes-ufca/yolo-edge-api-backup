@@ -195,14 +195,12 @@ jobs:
           dvc pull models/yolov8n.pt.dvc
           dvc pull dataset/exports/epi-v1.dvc
 
-      - name: Recuperar dataset via DVC
-        run: |
-          dvc pull dataset/exports/epi-v1.dvc
 
-      - name: Ajustar caminho do dataset para o runner
+       - name: Ajustar caminho do dataset para o runner
         run: |
-          sed -i 's|^path:.*|path: .|' dataset/exports/epi-v1/data.yaml
+          sed -i "s|^path:.*|path: $GITHUB_WORKSPACE/dataset/exports/epi-v1|" dataset/exports/epi-v1/data.yaml
           cat dataset/exports/epi-v1/data.yaml
+
 
       - name: Verificar dataset
         run: |
