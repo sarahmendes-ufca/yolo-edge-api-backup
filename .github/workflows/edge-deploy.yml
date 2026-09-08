@@ -9,11 +9,9 @@ on:
   pull_request:
     branches: [main]
 
-
 env:
   REGISTRY:    ghcr.io
   IMAGE_NAME:  ${{ github.repository }}/yolo-api
-
 
 jobs:
   build-and-deploy:          # <-- Nome do Job
@@ -36,7 +34,7 @@ jobs:
       - name: Add SSH known hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H 100.65.67.105  >> ~/.ssh/known_hosts
+          ssh-keyscan -H 100.65.67.105 >> ~/.ssh/known_hosts
 
   # ─────────────────────────────────────────────────────────
   # JOB 1: Lint e testes unitários / smoke / integration
@@ -45,23 +43,21 @@ jobs:
   test:
     name: "Lint & Tests"
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: Conecta à rede Tailscale
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
 
       - name: Instalar dependências
         run: |
@@ -78,23 +74,17 @@ jobs:
           dvc remote modify --local local_remote keyfile ~/.ssh/dvc_key
           dvc pull models/yolov8n.pt.dvc
 
-
       - name: Disponibiliza o modelo em /app/models (mesmo path usado no Docker)
         run: |
           sudo mkdir -p /app
           sudo ln -sfn "$GITHUB_WORKSPACE/models" /app/models
           ls -la /app/models
 
-
       - name: Lint (ruff)
         run: ruff check app/
 
-
       - name: Testes automatizados
         run: pytest tests/ -v --tb=short
-
-
-
 
   # ─────────────────────────────────────────────────────────
   # JOB 2: Build da imagem Docker multi-arquitetura
@@ -104,23 +94,23 @@ jobs:
     name: "Build & Push (ARM64)"
     needs: test
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
+
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-
       - name: Configurar QEMU (emulação ARM64)
         uses: docker/setup-qemu-action@v3
 
-
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
-
 
       - name: Login no GitHub Container Registry
         uses: docker/login-action@v3
@@ -128,7 +118,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
 
       - name: Extrair metadados da imagem
         id: meta
@@ -140,7 +129,6 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-
       - name: Build e Push (multi-arch)
         uses: docker/build-push-action@v5
         with:
@@ -151,10 +139,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to:   type=gha,mode=max
-
-
-
+          cache-to: type=gha,mode=max
 
   # ─────────────────────────────────────────────────────────
   # JOB 3: Quality gate do modelo
@@ -164,16 +149,15 @@ jobs:
     name: "Model Quality Gate"
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: Conecta à rede Tailscale
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -181,10 +165,8 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-
       - name: Instalar dependências
         run: pip install ultralytics "dvc[ssh]"
-
 
       - name: Recuperar modelo via DVC
         run: |
@@ -195,22 +177,21 @@ jobs:
           dvc pull models/yolov8n.pt.dvc
           dvc pull dataset/exports/epi-v1.dvc
 
-       - name: Ajustar caminho do dataset para o runner
-         run: |
+      - name: Ajustar caminho do dataset para o runner
+        run: |
           sed -i "s|^path:.*|path: $GITHUB_WORKSPACE/dataset/exports/epi-v1|" dataset/exports/epi-v1/data.yaml
           cat dataset/exports/epi-v1/data.yaml
 
- 
-       - name: Verificar dataset
-         run: |
-           echo "=== data.yaml ==="
-           cat dataset/exports/epi-v1/data.yaml
+      - name: Verificar dataset
+        run: |
+          echo "=== data.yaml ==="
+          cat dataset/exports/epi-v1/data.yaml
 
-           echo "=== estrutura ==="
-           find dataset/exports/epi-v1 -maxdepth 2 -type d | sort
+          echo "=== estrutura ==="
+          find dataset/exports/epi-v1 -maxdepth 2 -type d | sort
 
-           echo "=== imagens valid ==="
-           find dataset/exports/epi-v1/valid/images -type f | head
+          echo "=== imagens valid ==="
+          find dataset/exports/epi-v1/valid/images -type f | head
 
       - name: Executar quality gate (mAP@0.5 >= 0.50)
         run: |
@@ -218,9 +199,6 @@ jobs:
             --model models/yolov8n.pt \
             --dataset dataset/exports/epi-v1/data.yaml \
             --threshold 0.50
-
-
-
 
   # ─────────────────────────────────────────────────────────
   # JOB 4: Deploy no Raspberry Pi 5 via SSH
@@ -232,16 +210,15 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
 
       - name: Conecta à rede Tailscale
         uses: tailscale/github-action@v4
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-
 
       - name: Deploy via SSH com rollback automático
         uses: appleboy/ssh-action@v1
@@ -255,7 +232,6 @@ jobs:
             cd $DEPLOY_PATH
             git pull origin main
             bash scripts/deploy.sh
-
 
       - name: Notificar resultado
         if: always()
