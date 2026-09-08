@@ -195,6 +195,20 @@ jobs:
           dvc pull models/yolov8n.pt.dvc
           dvc pull dataset/exports/epi-v1.dvc
 
+      - name: Recuperar dataset via DVC
+        run: |
+          dvc pull dataset/exports/epi-v1.dvc
+
+      - name: Verificar dataset
+        run: |
+          echo "=== data.yaml ==="
+          cat dataset/exports/epi-v1/data.yaml
+
+          echo "=== estrutura ==="
+          find dataset/exports/epi-v1 -maxdepth 2 -type d | sort
+
+          echo "=== imagens valid ==="
+          find dataset/exports/epi-v1/valid/images -type f | head
 
       - name: Executar quality gate (mAP@0.5 >= 0.50)
         run: |
