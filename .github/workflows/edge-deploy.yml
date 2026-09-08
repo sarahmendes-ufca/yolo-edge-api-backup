@@ -197,7 +197,7 @@ jobs:
 
 
        - name: Ajustar caminho do dataset para o runner
-        run: |
+         run: |
           sed -i "s|^path:.*|path: $GITHUB_WORKSPACE/dataset/exports/epi-v1|" dataset/exports/epi-v1/data.yaml
           cat dataset/exports/epi-v1/data.yaml
 
