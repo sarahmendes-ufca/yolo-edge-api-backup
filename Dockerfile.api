@@ -1,5 +1,7 @@
 FROM python:3.11-slim-bookworm
 
+RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
+
 # Instala dependencias do sistema + repositorio oficial da Raspberry Pi Foundation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 libglib2.0-0 libgomp1 curl gnupg ca-certificates && \
