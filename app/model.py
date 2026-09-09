@@ -22,9 +22,9 @@ except AttributeError:
 _models = {}
 
 def get_default_model_name() -> str:
-    return "yolov8n.pt"
+    return "models/yolov8n.pt"
 
-def load_model(model_name: str = "yolov8n.pt"):
+def load_model(model_name: str = "models/yolov8n.pt"):
     if model_name not in _models:
         _models[model_name] = YOLO(model_name)
     return _models[model_name]
